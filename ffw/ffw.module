@@ -1,0 +1,180 @@
+<?php
+function ffw_help($path, $arg){
+    switch ($path) {
+        case "admin/help#ffw":
+            return t("Displays links to nodes created on this date");
+            break;
+    }
+}
+
+
+
+function wwf_form_alter($form, &$form_state, $form_id) {
+
+    $form['teaser_field'] = array(
+        '#type' => 'textarea',
+        '#title' => t('FFW'),
+        '#size' => 10,
+        '#maxlength' => 225,
+        '#resizable' => TRUE,
+    );
+if($form_id == 'teaser_field')
+    return $form;
+}
+
+
+
+
+function ffw_block_info() {
+    $blocks['ffw'] = array(
+        'info' => t('FFW'),
+        'cache' => DRUPAL_CACHE_PER_ROLE,
+    );
+    return $blocks;
+}
+
+
+
+
+function ffw_contents($display){
+    $today = getdate();
+    $start_time = mktime(0, 0, 0,$today['mon'],($today['mday'] - 7), $today['year']);
+    $end_time = time();
+    $result = ffw_contents('block');
+    $max_num = variable_get('ffw', 3);
+    $query = db_select('node', 'n')
+        ->fields('n', array('nid', 'title', 'created'))
+        ->condition('status', 1)
+        ->condition('created', array($start_time, $end_time), 'BETWEEN')
+        ->orderBy('created', 'DESC');
+
+    if ($display == 'block'){
+        $query->range(0, $max_num);
+    }
+    return $query->execute();
+}
+
+
+
+
+function current_posts_block_view($delta = '') {
+    switch ($delta) {
+        case 'ffw':
+            $block['subject'] = t('ffw');
+            if (user_access('access content')) {
+                $result = ffw_contents();
+                $items = array();
+                foreach ($result as $node) {
+                    $items[] = array(
+                        'data' => l($node->title, 'node/' . $node->nid),
+                    );
+                }
+                if (empty($items)) {
+                    $block['content'] = t('No posts available.');
+                }
+                else {
+                    $block['content'] = theme('item_list', array(
+                        'items' => $items));
+                }
+            }
+            return $block;
+    }
+
+}
+
+
+
+function ffw_form($form, &$form_state) {
+    $form['ffw_max'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Maximum number of posts'),
+        '#default_value' => variable_get('ffw_max', 3),
+        '#size' => 2,
+        '#maxlength' => 2,
+        '#description' => t('The maximum number of links to display in the block.'),
+        '#required' => TRUE,
+    );
+
+    return system_settings_form($form);
+}
+
+
+
+
+function ffw_form_validate($form, &$form_state){
+    $max_num = $form_state['values']['ffw_max'];
+    if (!is_numeric($max_num)){
+        form_set_error('ffw_max', t('You must enter a number for the maximum number of posts to display.'));
+    }
+    elseif ($max_num <= 0){
+        form_set_error('ffw_max', t('Maximum number of posts to display must be positive.'));
+    }
+}
+
+
+
+function ffw_permission() {
+    return array(
+        'access ffw content' => array(
+            'title' => t('Access content for the ffw module'),
+        )
+    );
+}
+
+
+
+function ffw_menu() {
+    $items = array();
+    $items['ffw'] = array(
+        'title' => 'ffw',
+        'page callback' => '_ffw_page',
+        'access arguments' => array('access ffw content'),
+        'type' => MENU_NORMAL_ITEM,
+    );
+    return $items;
+}
+
+
+/*
+function ffw_menu() {
+    $items = array();
+
+    $items['admin/config/content/ffw'] = array(
+        'title' => 'ffw',
+        'description' => 'Configuration for ffw module',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('ffw_form'),
+        'access arguments' => array('access administration pages'),
+        'type' => MENU_NORMAL_ITEM,
+    );
+
+    return $items;
+}
+*/
+
+
+function _ffw_page()
+{
+    $result = ffw_contents('page');
+    $items = array();
+    foreach ($result as $node) {
+        $items[] = array(
+            'data' => l($node->title, 'node/' . $node->nid),
+        );
+    }
+    if (empty($items)) {
+        $page_array['ffw_arguments'] = array(
+            '#title' => t('All posts from the last week'),
+            '#markup' => t('No posts available.'),
+        );
+        return $page_array;
+    }
+    else {
+        $page_array['ffw_arguments'] = array(
+            '#title' => t('All posts from the last week'),
+            '#items' => $items,
+            '#theme' => 'item_list__ffw',
+        );
+        return $page_array;
+    }
+}

@@ -1,0 +1,47 @@
+<?php
+
+class CurrentPostsTestCase extends DrupalWebTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => 'ffw module functionality',
+      'description' => 'Tests hooks in the ffw module',
+      'group' => 'ffw',
+    ); 
+  }
+ public function setUp() {
+    parent::setUp('ffw');
+  }
+ public function testPermission() {
+    $data = module_invoke('ffw', 'permission');
+ $this->assertTrue(is_array($data), t('Permission hook returns array.'));
+    
+    $this->assertTrue(array_key_exists('access ffw content', $data),
+    t('Permission is as expected.'));
+  }
+public function testMenu() {
+    $items = module_invoke('ffw', 'menu');
+    
+    $this->assertEqual(2, count($items), t('Two items in menu.'));
+    
+    $this->assertIdentical($items['admin/config/content/ffw']['title'], 
+    $items['ffw']['title'], t('Titles are identical.'));
+  }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+files[] = ffw.test

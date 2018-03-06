@@ -1,0 +1,10 @@
+<?php
+function ffw_schema() {
+  $schema['mytable1'] = array(
+     // specification for mytable1
+  );
+  $schema['mytable2'] = array(
+     // specification for mytable2
+  );
+  return $schema;
+}

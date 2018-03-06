@@ -1,0 +1,6 @@
+name = ffw
+description = Alter of form where we add new content from type FFW - teaser field text area, configurate premissions, can be used for declaring blocks, retrieving data, generatin block content, configuration form, specifying a custom premission for a new page, theming the page and for adding links   
+core = 7.x
+
+; NEW LINE
+configure = admin/config/content/ffw
